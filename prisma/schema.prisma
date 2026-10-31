@@ -1,0 +1,162 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  role      String   @default("SPECIALIST") // "ADMIN" | "SPECIALIST"
+  passwordHash String? @map("password_hash") // scrypt; null = cannot log in yet
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  clients   Client[]
+
+  @@map("users")
+}
+
+model Client {
+  id                   String   @id @default(uuid())
+  name                 String
+  specialistId         String?  @map("specialist_id")
+  specialistName       String?  @map("specialist_name")
+  timezone             String   @default("Asia/Singapore")
+  currency             String   @default("SGD")
+  active               Boolean  @default(true)
+  highCpaThreshold     Float?   @default(60.0) @map("high_cpa_threshold")
+  requiresApproval     Boolean  @default(false) @map("requires_approval")
+  shareToken           String?  @unique @map("share_token") // read-only client portal link
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  specialist           User?    @relation(fields: [specialistId], references: [id])
+  googleAdsAccounts    GoogleAdsAccount[]
+  campaignServiceMaps  CampaignServiceMap[]
+  conversionActionMaps ConversionActionMap[]
+  dailyMetrics         DailyMetric[]
+  whatsappGroup        WhatsAppGroup?
+  reportLogs           ReportLog[]
+
+  @@map("clients")
+}
+
+model GoogleAdsAccount {
+  id              String   @id @default(uuid())
+  clientId        String   @map("client_id")
+  customerId      String   @map("customer_id") // format: 1234567890 or 123-456-7890
+  loginCustomerId String?  @map("login_customer_id") // MCC account ID
+  status          String   @default("ACTIVE") // "ACTIVE" | "PAUSED" | "ERROR"
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@map("google_ads_accounts")
+}
+
+model CampaignServiceMap {
+  id                  String   @id @default(uuid())
+  clientId            String   @map("client_id")
+  campaignNamePattern String   @map("campaign_name_pattern") // Substring or Regex pattern, e.g. "HMS - SG"
+  serviceLabel        String   @map("service_label") // Short code, e.g. "HM"
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  client              Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@map("campaign_service_map")
+}
+
+model ConversionActionMap {
+  id                   String   @id @default(uuid())
+  clientId             String   @map("client_id")
+  conversionActionName String   @map("conversion_action_name")
+  type                 String   @default("OTHER") // "CALL" | "WHATSAPP" | "OTHER"
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  client               Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@map("conversion_action_map")
+}
+
+model DailyMetric {
+  id                  String   @id @default(uuid())
+  clientId            String   @map("client_id")
+  date                String   // YYYY-MM-DD
+  clicks              Int      @default(0)
+  impressions         Int      @default(0)
+  ctr                 Float    @default(0) // Percentage, e.g. 6.67
+  avgCpc              Float    @default(0) @map("avg_cpc") // Currency value, e.g. 4.59
+  cost                Float    @default(0) // Currency value, e.g. 50.54
+  conversions         Float    @default(0)
+  callConversions     Float    @default(0) @map("call_conversions")
+  whatsappConversions Float    @default(0) @map("whatsapp_conversions")
+  perService          String   @default("{}") @map("per_service") // JSON string e.g. '{"HM": 3, "Drilling": 2}'
+  hourlyMetrics       String   @default("[]") @map("hourly_metrics") // JSON string e.g. '[{"hour": 0, ...}]'
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  client              Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, date])
+  @@index([date])
+  @@map("daily_metrics")
+}
+
+model WhatsAppGroup {
+  id            String   @id @default(uuid())
+  clientId      String   @unique @map("client_id")
+  groupId       String?  @map("group_id") // WhatsApp Group ID (JID)
+  inviteLink    String?  @map("invite_link")
+  fallbackPhone String?  @map("fallback_phone") // E.164 phone number, e.g. +6591234567
+  status        String   @default("ACTIVE")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("whatsapp_groups")
+}
+
+model ReportLog {
+  id        String    @id @default(uuid())
+  clientId  String    @map("client_id")
+  date      String    // YYYY-MM-DD
+  status    String    @default("PENDING") // "PENDING" | "APPROVED" | "SENT" | "FAILED" | "SKIPPED"
+  imageUrl  String?   @map("image_url")
+  caption   String?
+  error     String?
+  sentAt    DateTime? @map("sent_at")
+  retries   Int       @default(0)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  client    Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, date])
+  @@index([date, status])
+  @@map("report_logs")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  userEmail String?  @map("user_email")
+  entity    String?
+  entityId  String?  @map("entity_id")
+  details   String?  // JSON string
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("audit_logs")
+}

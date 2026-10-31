@@ -1,0 +1,44 @@
+# ==============================================================================
+# Database Configuration (PostgreSQL / Supabase)
+# ==============================================================================
+DATABASE_URL="postgresql://postgres:password@localhost:5432/ads_reporting?schema=public"
+
+# ==============================================================================
+# Google Ads API Credentials
+# ==============================================================================
+# Created in Google Cloud Console under OAuth 2.0 Client IDs
+GOOGLE_ADS_CLIENT_ID="your-client-id.apps.googleusercontent.com"
+GOOGLE_ADS_CLIENT_SECRET="your-client-secret"
+GOOGLE_ADS_REFRESH_TOKEN="your-oauth2-refresh-token"
+
+# Obtained from Google Ads MCC -> Tools and Settings -> API Center
+GOOGLE_ADS_DEVELOPER_TOKEN="your-developer-token"
+
+# Optional default Manager Account (MCC) Customer ID (digits only, e.g. 1234567890)
+GOOGLE_ADS_LOGIN_CUSTOMER_ID="1234567890"
+
+# ==============================================================================
+# Meta WhatsApp Cloud API
+# ==============================================================================
+# Permanent System User Access Token with whatsapp_business_messaging & whatsapp_business_management
+WHATSAPP_API_TOKEN="EAAG..."
+# Phone number ID under WhatsApp Accounts in Meta Business Manager
+WHATSAPP_PHONE_NUMBER_ID="your-phone-number-id"
+WHATSAPP_BUSINESS_ACCOUNT_ID="your-waba-id"
+WHATSAPP_API_VERSION="v21.0"
+
+# ==============================================================================
+# Internal System & Automation
+# ==============================================================================
+# Secret key used to authorize Vercel Cron or external triggers: Authorization: Bearer <CRON_SECRET>
+CRON_SECRET="your-random-cron-secret-key"
+
+# App URL for generating asset links and webhook callbacks
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+# Emergency Admin Notification (WhatsApp phone number with country code, e.g. +6591234567)
+ADMIN_ALERT_PHONE="+6591234567"
+ADMIN_ALERT_EMAIL="admin@digitalresolution.com"
+
+# Signs login session cookies (random, 32+ chars): node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+AUTH_SECRET="replace-with-a-long-random-string"

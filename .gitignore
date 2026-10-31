@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# secrets: never commit real credentials (.envexample is the template)
+.env
+.env*.local
+
+# local databases
+prisma/*.db
+prisma/*.db-journal
+
+# logs & OS files
+npm-debug.log*
+*.log
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel
